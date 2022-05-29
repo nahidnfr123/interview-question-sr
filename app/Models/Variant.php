@@ -9,5 +9,8 @@ class Variant extends Model
     protected $fillable = [
         'title', 'description'
     ];
-
+    public function productVariant(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
 }
