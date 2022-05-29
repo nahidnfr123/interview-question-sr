@@ -353,7 +353,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'Admin', 'admin@example.com', NULL, '$2y$10$NfLWLL9Mj6dCi0fQ3TBqWO53ZFsDlGUZmFl.gILMhHDHVi34XwWKW', NULL, '2020-08-28 00:03:42', '2020-08-28 00:03:42');
+(1, 'Admin', 'admin@example.com', NULL, '$2a$12$tBJczuQCjoTZdyqvNII/GOUIguuQwDSBZveyOu9aYhvzFJ3OINQR.', NULL, '2020-08-28 00:03:42', '2020-08-28 00:03:42');
 
 -- --------------------------------------------------------
 
