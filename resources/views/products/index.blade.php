@@ -53,7 +53,7 @@
                     <tbody>
                     @foreach($products as $key => $product)
                         <tr>
-                            <td>{{$key+1}}</td>
+                            <td>{{$product->id}}</td>
                             <td>{{$product->title}} <br> Created at : {{ \Carbon\Carbon::parse($product->created_at)->format('d-M-yy') }}
                             </td>
                             <td><small>{{ $product->description }}</small></td>
@@ -100,10 +100,15 @@
         <div class="card-footer">
             <div class="row justify-content-between">
                 <div class="col-md-6">
-                    <p>Showing 1 to 10 out of 100</p>
+                    <p>
+                        Showing
+                        {{$products->firstItem() }} to
+                        {{$products->lastItem()}} out of
+                        {{$products->total()}}
+                    </p>
                 </div>
-                <div class="col-md-2">
-                    {{$products}}
+                <div class="col-md-4">
+                    {{$products->onEachSide(3)->links()}}
                 </div>
             </div>
         </div>
