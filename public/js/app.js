@@ -2028,6 +2028,7 @@ __webpack_require__.r(__webpack_exports__);
   },
   data: function data() {
     return {
+      form: {},
       product_name: '',
       product_sku: '',
       description: '',
@@ -2048,6 +2049,7 @@ __webpack_require__.r(__webpack_exports__);
     };
   },
   methods: {
+    addVariantsToPreview: function addVariantsToPreview() {},
     // it will push a new object into product variant
     newVariant: function newVariant() {
       var all_variants = this.variants.map(function (el) {
@@ -2108,12 +2110,12 @@ __webpack_require__.r(__webpack_exports__);
         product_variant: this.product_variant,
         product_variant_prices: this.product_variant_prices
       };
+      console.log(product);
       axios.post('/product', product).then(function (response) {
         console.log(response.data);
       })["catch"](function (error) {
         console.log(error);
       });
-      console.log(product);
     }
   },
   mounted: function mounted() {
@@ -63300,8 +63302,8 @@ __webpack_require__.r(__webpack_exports__);
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /home/rifat/Programming/mediusware/interview/interview-question-sr/resources/js/app.js */"./resources/js/app.js");
-module.exports = __webpack_require__(/*! /home/rifat/Programming/mediusware/interview/interview-question-sr/resources/sass/app.scss */"./resources/sass/app.scss");
+__webpack_require__(/*! C:\Users\NFR\Desktop\interview-question-sr\resources\js\app.js */"./resources/js/app.js");
+module.exports = __webpack_require__(/*! C:\Users\NFR\Desktop\interview-question-sr\resources\sass\app.scss */"./resources/sass/app.scss");
 
 
 /***/ })

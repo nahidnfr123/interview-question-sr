@@ -22,7 +22,8 @@ class ProductController extends Controller
      */
     public function index()
     {
-        return view('products.index');
+        $products = Product::paginate(2);
+        return view('products.index', compact('products'));
     }
 
     /**
@@ -32,8 +33,7 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $variants = Variant::all();
-        return view('products.create', compact('variants'));
+
     }
 
     /**
@@ -44,10 +44,47 @@ class ProductController extends Controller
      */
     public function store(ProductStoreRequest $request): RedirectResponse
     {
+        // Insert product ...
         $product = new Product();
         $product->fill($request->only('title', 'sku', 'description'));
         $product->save();
-//        return view('products.index');
+
+        // Insert Variants
+        $productVariants = $product->productVariants();
+        if (count($request->product_variant)) {
+            $productVariantsData = [];
+            foreach ($request->product_variant as $variant) {
+                if ($variant['option'] && count($variant['tags'])) {
+                    foreach ($variant['tags'] as $tags) {
+                        $productVariantsData[] = [
+                            'product_id' => $product->id,
+                            'variant' => $tags,
+                            'variant_id' => $variant['option'],
+                        ];
+                    }
+                }
+            }
+            $productVariants->insert($productVariantsData);
+        }
+
+        /// Left to do .... this code needs to be sent in observer ...
+        if (count($request->product_variant_prices) && count($productVariants)) {
+            $productVariantsPricesData = [];
+            foreach ($request->product_variant_prices as $variant_prices) {
+                $productVariantsPricesData[] = [
+                    'price' => $variant_prices['price'],
+                    'stock' => $variant_prices['stock'],
+                    'product_id' => $product->id,
+                    'title' => $variant_prices['title'],
+                    'product_variant_one' => $variant_prices['title'],
+                    'product_variant_two' => $variant_prices['title'],
+                    'product_variant_three' => $variant_prices['title'],
+                ];
+            }
+            $productVariants->productVariantPrices()->insert($productVariantsPricesData);
+        }
+
+
         return redirect()->back()->with('success', 'Product Saved');
     }
 
@@ -67,7 +104,7 @@ class ProductController extends Controller
      * Show the form for editing the specified resource.
      *
      * @param \App\Models\Product $product
-     * @return \Illuminate\Http\Response
+     * @return Application|Factory|\Illuminate\Http\Response|View
      */
     public function edit(Product $product)
     {
