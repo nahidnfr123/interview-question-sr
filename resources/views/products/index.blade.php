@@ -8,14 +8,26 @@
 
 
     <div class="card">
-        <form action="" method="get" class="card-header">
+        <form action="{{ route('searchProduct') }}" method="get" class="card-header">
             <div class="form-row justify-content-between">
                 <div class="col-md-2">
-                    <input type="text" name="title" placeholder="Product Title" class="form-control">
+                    <input type="text" name="title" placeholder="Product Title" class="form-control"
+                           value="{{$_GET['title'] ?? ''}}">
                 </div>
                 <div class="col-md-2">
                     <select name="variant" id="" class="form-control">
-
+                        @foreach($variants as $key => $variant)
+                            {{--                            <optgroup label="{{$key}}">--}}
+                            {{--                                --}}{{--@foreach($variant->productVariants() as $pv)--}}
+                            {{--                                    <option value="">{{$pv->variant}}</option>--}}
+                            {{--                                @endforeach--}}
+                            {{--                                <option value="">{{$variant}}</option>--}}
+                            {{--                            </optgroup>--}}
+                            {{--                            <label for="">{{$variant->title}}</label>--}}
+                            {{-- @foreach($variant->productVariants as $pv)
+                                 <option value="">{{$pv->variant}}</option>
+                             @endforeach--}}
+                        @endforeach
                     </select>
                 </div>
 
@@ -24,12 +36,15 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text">Price Range</span>
                         </div>
-                        <input type="text" name="price_from" aria-label="First name" placeholder="From" class="form-control">
-                        <input type="text" name="price_to" aria-label="Last name" placeholder="To" class="form-control">
+                        <input type="text" name="price_from" aria-label="First name" placeholder="From" class="form-control"
+                               value="{{$_GET['price_from'] ?? ''}}">
+                        <input type="text" name="price_to" aria-label="Last name" placeholder="To" class="form-control"
+                               value="{{$_GET['price_to'] ?? ''}}">
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <input type="date" name="date" placeholder="Date" class="form-control">
+                    <input type="date" name="date" placeholder="Date" class="form-control"
+                           value="{{$_GET['date'] ?? ''}}">
                 </div>
                 <div class="col-md-1">
                     <button type="submit" class="btn btn-primary float-right"><i class="fa fa-search"></i></button>
@@ -108,7 +123,7 @@
                     </p>
                 </div>
                 <div class="col-md-4">
-                    {{$products->onEachSide(3)->links()}}
+                    {{$products->links()}}
                 </div>
             </div>
         </div>

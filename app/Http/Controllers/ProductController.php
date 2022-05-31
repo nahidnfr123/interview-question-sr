@@ -7,10 +7,12 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ProductVariantPrice;
 use App\Models\Variant;
+use Carbon\Carbon;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -22,8 +24,63 @@ class ProductController extends Controller
      */
     public function index()
     {
+//        $productVariants = ProductVariant::select('variant')->distinct('variant')->get();
+//        return response()->json($productVariants);
+
+        $variants = Variant::with(['productVariants' => function ($query) {
+            return $query->select('variant')->groupBy('variant');
+        }])->orderBy('title')
+            ->distinct()
+            ->get()
+            ->groupBy('title');
+
+        /*$variants = Variant::with(['productVariants' => function ($query) {
+//            $query->select(['variant'])->groupBy('variant');
+        }])->get()->groupBy('title');*/
+
+        /* $variants = DB::table('variants')
+             ->join('product_variants', 'variants.id', '=', 'product_variants.variant_id')
+             ->select('title', 'product_variants.variant')
+             ->groupBy('product_variants.variant')
+             ->groupBy('title')
+             ->get();*/
+//        return response()->json($variants);
+//        dd($variants);
+
         $products = Product::paginate(2);
-        return view('products.index', compact('products'));
+        return view('products.index', compact('products', 'variants'));
+    }
+
+    public function search()
+    {
+        $variants = Variant::with('productVariants')->get()->groupBy('title');
+        $productsSearch = Product::query();
+        $title = \request('title');
+        $variant = \request('variant');
+        $price_from = \request('price_from');
+        $price_to = \request('price_to');
+        $date = \request('date');
+
+        if ($title) {
+            $productsSearch->where('title', 'LIKE', '%' . $title . '%');
+        }
+        if ($variant) {
+
+        }
+        if ($price_from && $price_to) {
+            $productsSearch->whereHas('productVariantPrices', function ($q) use ($price_from, $price_to) {
+                $q->whereBetween('price', [(int)$price_from, (int)$price_to])->get();
+            });
+        }
+        if ($date) {
+            $productsSearch->whereDate('created_at', date('Y-m-d', strtotime($date)));
+        }
+//        return [$price_from, number_format($price_to)];
+
+        $products = $productsSearch->paginate(2);
+//        return $products;
+        return view('products.index', compact('products', 'variants'));
+
     }
 
     /**
@@ -109,7 +166,7 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $variants = Variant::all();
-        return view('products.edit', compact('variants'));
+        return view('products . edit', compact('variants'));
     }
 
     /**

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ProductVariant extends Model
 {
     protected $fillable = [
-        'title', 'description'
+        'variant', 'variant_id', 'product_id'
     ];
 
     public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
