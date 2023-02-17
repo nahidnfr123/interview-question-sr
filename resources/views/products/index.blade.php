@@ -56,11 +56,11 @@
                 <table class="table">
                     <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Title</th>
-                        <th width="300px">Description</th>
+                        <th width="40px">#</th>
+                        <th width="250px">Title</th>
+                        <th width="250px">Description</th>
                         <th>Variant</th>
-                        <th width="150px">Action</th>
+                        <th width="120px">Action</th>
                     </tr>
                     </thead>
 
@@ -122,7 +122,7 @@
                     </p>
                 </div>
                 <div class="col-md-4">
-                    {{$products->links()}}
+                    {{$products->withQueryString()->links()}}
                 </div>
             </div>
         </div>

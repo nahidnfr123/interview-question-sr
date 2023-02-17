@@ -39,8 +39,8 @@ class ProductController extends Controller
     {
         // Get Variants with Product Variants
         $variants = $this->getVariants();
+        $products = Product::query();
 
-        $productsSearch = Product::query();
         $title = \request('title');
         $variant = \request('variant');
         $price_from = \request('price_from');
@@ -48,22 +48,24 @@ class ProductController extends Controller
         $date = \request('date');
 
         if ($title) {
-            $productsSearch->where('title', 'LIKE', '%' . $title . '%');
+            $products->where('title', 'LIKE', '%' . $title . '%');
         }
         if ($variant) {
-
+            $products->whereHas('productVariants', function ($q) use ($variant) {
+                $q->where('variant', $variant);
+            });
         }
         if ($price_from && $price_to) {
-            $productsSearch->whereHas('productVariantPrices', function ($q) use ($price_from, $price_to) {
+            $products->whereHas('productVariantPrices', function ($q) use ($price_from, $price_to) {
                 $q->whereBetween('price', [(int)$price_from, (int)$price_to])->get();
             });
         }
         if ($date) {
-            $productsSearch->whereDate('created_at', date('Y-m-d', strtotime($date)));
+            $products->whereDate('created_at', date('Y-m-d', strtotime($date)));
         }
 //        return [$price_from, number_format($price_to)];
 
-        $products = $productsSearch->paginate(2);
+        $products = $products->paginate(2);
 //        return $products;
         return view('products.index', compact('products', 'variants'));
 
@@ -98,9 +100,8 @@ class ProductController extends Controller
     {
         DB::beginTransaction();
         try {
-            $product = new Product();
-            $product->fill($request->only('title', 'sku', 'description'));
-            $product->save();
+            // Create Product Data ...
+            $product = Product::create($request->only('title', 'sku', 'description'));
 
             if (count($request->product_variant)) {
                 $productVariantsData = [];
@@ -111,6 +112,8 @@ class ProductController extends Controller
                         }
                     }
                 }
+
+                // Create Product Variant ...
                 $productVariants = $product->productVariants()->createMany($productVariantsData);
 
                 if (count($request->product_variant_prices) && count($productVariants)) {
@@ -125,6 +128,7 @@ class ProductController extends Controller
                             'product_variant_three' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[2]),
                         ];
                     }
+                    // Create Product Variant Price...
                     ProductVariantPrice::insert($productVariantsPricesData);
                 }
             }
