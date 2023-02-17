@@ -10,6 +10,7 @@ use App\Models\Variant;
 use Carbon\Carbon;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -98,43 +99,49 @@ class ProductController extends Controller
      * Store a newly created resource in storage.
      *
      * @param ProductStoreRequest $request
-     * @return RedirectResponse
+     * @return JsonResponse
      */
-    public function store(ProductStoreRequest $request): RedirectResponse
+    public function store(ProductStoreRequest $request): JsonResponse
     {
-        $product = new Product();
-        $product->fill($request->only('title', 'sku', 'description'));
-        $product->save();
+        DB::beginTransaction();
+        try {
+            $product = new Product();
+            $product->fill($request->only('title', 'sku', 'description'));
+            $product->save();
 
-        if (count($request->product_variant)) {
-            $productVariantsData = [];
-            foreach ($request->product_variant as $variant) {
-                if ($variant['option'] && count($variant['tags'])) {
-                    foreach ($variant['tags'] as $tags) {
-                        $productVariantsData[] = ['product_id' => $product->id, 'variant' => $tags, 'variant_id' => $variant['option'],];
+            if (count($request->product_variant)) {
+                $productVariantsData = [];
+                foreach ($request->product_variant as $variant) {
+                    if ($variant['option'] && count($variant['tags'])) {
+                        foreach ($variant['tags'] as $tags) {
+                            $productVariantsData[] = ['product_id' => $product->id, 'variant' => $tags, 'variant_id' => $variant['option'],];
+                        }
                     }
                 }
-            }
-            $productVariants = $product->productVariants()->createMany($productVariantsData);
+                $productVariants = $product->productVariants()->createMany($productVariantsData);
 
-            if (count($request->product_variant_prices) && count($productVariants)) {
-                $productVariantsPricesData = [];
-                foreach ($request->product_variant_prices as $variant_prices) {
-                    $productVariantsPricesData[] = [
-                        'price' => $variant_prices['price'],
-                        'stock' => $variant_prices['stock'],
-                        'product_id' => $product->id,
-                        'product_variant_one' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[0]),
-                        'product_variant_two' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[1]),
-                        'product_variant_three' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[2]),
-                    ];
+                if (count($request->product_variant_prices) && count($productVariants)) {
+                    $productVariantsPricesData = [];
+                    foreach ($request->product_variant_prices as $variant_prices) {
+                        $productVariantsPricesData[] = [
+                            'price' => $variant_prices['price'],
+                            'stock' => $variant_prices['stock'],
+                            'product_id' => $product->id,
+                            'product_variant_one' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[0]),
+                            'product_variant_two' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[1]),
+                            'product_variant_three' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[2]),
+                        ];
+                    }
+                    ProductVariantPrice::insert($productVariantsPricesData);
                 }
-                ProductVariantPrice::insert($productVariantsPricesData);
             }
+
+            DB::commit();
+            return response()->json(['message' => 'Product Saved'], 200);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['message' => 'Some Error occurred!'], 501);
         }
-
-
-        return redirect()->back()->with('success', 'Product Saved');
     }
 
     public function getVariantId($productVariants, $variant)
