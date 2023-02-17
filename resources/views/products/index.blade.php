@@ -10,16 +10,19 @@
         <form action="{{ route('searchProduct') }}" method="get" class="card-header">
             <div class="form-row justify-content-between">
                 <div class="col-md-2">
-                    <input type="text" name="title" placeholder="Product Title" class="form-control">
-                    {{--                           value="{{$_GET['title'] ?? ''}}">--}}
+                    <input type="text" name="title" placeholder="Product Title" class="form-control"
+                           value="{{$_GET['title'] ?? ''}}">
                 </div>
                 <div class="col-md-2">
-                    <select name="variant" id="" class="form-control">
+                    <select name="variant" id="variant" class="form-control">
+                        <option value="" selected>--Select A Variant--</option>
                         @foreach($variants as $key => $variant)
                             <optgroup label="{{$variant->title}}">
                                 @if(count($variant->productVariants))
                                     @foreach($variant->productVariants as $pv)
-                                        <option value="{{$pv->variant}}">{{$pv->variant}}</option>
+                                        <option value="{{$pv->variant}}" @if(($_GET['variant'] ?? '') === $pv->variant) selected @endif>
+                                            {{$pv->variant}}
+                                        </option>
                                     @endforeach
                                 @endif
                             </optgroup>

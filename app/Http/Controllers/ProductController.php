@@ -27,18 +27,19 @@ class ProductController extends Controller
     public function index()
     {
         // Get Variants with Product Variants
-        $variants = Variant::with(['productVariants' => function ($query) {
-            $query->select('variant_id', 'variant')->distinct('variant')->get();
-        }])->get();
+        $variants = $this->getVariants();
 
         // Get Products Paginated by 2 products per page
         $products = Product::paginate(2);
         return view('products.index', compact('products', 'variants'));
     }
 
+
     public function search()
     {
-        $variants = Variant::with('productVariants')->get()->groupBy('title');
+        // Get Variants with Product Variants
+        $variants = $this->getVariants();
+
         $productsSearch = Product::query();
         $title = \request('title');
         $variant = \request('variant');
@@ -66,6 +67,14 @@ class ProductController extends Controller
 //        return $products;
         return view('products.index', compact('products', 'variants'));
 
+    }
+
+
+    public function getVariants()
+    {
+        return Variant::with(['productVariants' => function ($query) {
+            $query->select('variant_id', 'variant')->distinct('variant')->get();
+        }])->get();
     }
 
     /**
