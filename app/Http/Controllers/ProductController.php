@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductStoreRequest;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\ProductVariantPrice;
 use App\Models\Variant;
@@ -63,12 +64,9 @@ class ProductController extends Controller
         if ($date) {
             $products->whereDate('created_at', date('Y-m-d', strtotime($date)));
         }
-//        return [$price_from, number_format($price_to)];
 
         $products = $products->paginate(2);
-//        return $products;
         return view('products.index', compact('products', 'variants'));
-
     }
 
 
@@ -103,12 +101,30 @@ class ProductController extends Controller
             // Create Product Data ...
             $product = Product::create($request->only('title', 'sku', 'description'));
 
-            if (count($request->product_variant)) {
+            $create_at = Carbon::now();
+            if ($request->product_images && count($request->product_images)) {
+                $productImagesData = [];
+                foreach ($request->product_images as $image) {
+                    $productImagesData[] = [
+                        'product_id' => $product->id,
+                        'file_path' => $image,
+                        'create_at' => $create_at
+                    ];
+                }
+                $product->productImages()->insert($productImagesData);
+            }
+
+            if ($request->product_variants && count($request->product_variants)) {
                 $productVariantsData = [];
-                foreach ($request->product_variant as $variant) {
+                foreach ($request->product_variants as $variant) {
                     if ($variant['option'] && count($variant['tags'])) {
                         foreach ($variant['tags'] as $tags) {
-                            $productVariantsData[] = ['product_id' => $product->id, 'variant' => $tags, 'variant_id' => $variant['option'],];
+                            $productVariantsData[] = [
+                                'product_id' => $product->id,
+                                'variant' => $tags,
+                                'variant_id' => $variant['option'],
+                                'create_at' => $create_at
+                            ];
                         }
                     }
                 }
@@ -126,6 +142,7 @@ class ProductController extends Controller
                             'product_variant_one' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[0]),
                             'product_variant_two' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[1]),
                             'product_variant_three' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[2]),
+                            'create_at' => $create_at
                         ];
                     }
                     // Create Product Variant Price...
@@ -137,7 +154,7 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product Saved'], 200);
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json(['message' => 'Some Error occurred!'], 501);
+            return response()->json(['message' => $e], 400);
         }
     }
 
@@ -166,7 +183,8 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $variants = Variant::all();
-        return view('products.edit', compact('variants'));
+        $product->load('productImages', 'productVariants', 'productVariantPrices');
+        return view('products.edit', compact('product', 'variants'));
     }
 
     /**
@@ -178,13 +196,65 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        DB::beginTransaction();
-        try {
+//        DB::beginTransaction();
+//        try {
+        // Create Product Data ...
+        $product->update($request->only('title', 'sku', 'description'));
 
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json(['message' => 'Some Error occurred!'], 501);
+        $create_at = Carbon::now();
+        if ($request->product_images && count($request->product_images)) {
+            $productImagesData = [];
+            foreach ($request->product_images as $image) {
+                $productImagesData[] = [
+                    'product_id' => $product->id,
+                    'file_path' => $image,
+                    'create_at' => $create_at
+                ];
+            }
+            $product->productImages()->delete();
+            $product->productImages()->insert($productImagesData);
         }
+
+        if ($request->product_variants && count($request->product_variants)) {
+            $productVariantsData = [];
+            foreach ($request->product_variants as $variant) {
+                if ($variant['option'] && count($variant['tags'])) {
+                    foreach ($variant['tags'] as $tags) {
+                        $productVariantsData[] = [
+                            'product_id' => $product->id,
+                            'variant' => $tags,
+                            'variant_id' => $variant['option'],
+                            'create_at' => $create_at
+                        ];
+                    }
+                }
+            }
+
+            // Create Product Variant ...
+            $productVariants = $product->productVariants()->createMany($productVariantsData);
+
+            if (count($request->product_variant_prices) && count($productVariants)) {
+                $productVariantsPricesData = [];
+                foreach ($request->product_variant_prices as $variant_prices) {
+                    $productVariantsPricesData[] = [
+                        'price' => $variant_prices['price'],
+                        'stock' => $variant_prices['stock'],
+                        'product_id' => $product->id,
+                        'product_variant_one' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[0]),
+                        'product_variant_two' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[1]),
+                        'product_variant_three' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[2]),
+                        'create_at' => $create_at
+                    ];
+                }
+                // Create Product Variant Price...
+                ProductVariantPrice::insert($productVariantsPricesData);
+            }
+        }
+
+//        } catch (\Exception $e) {
+//            DB::rollback();
+//            return response()->json(['message' => $e], 400);
+//        }
     }
 
     /**

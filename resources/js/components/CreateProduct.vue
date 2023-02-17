@@ -1,6 +1,11 @@
 <template>
     <section>
         <div class="row">
+            <div v-if="errors" class="col-md-12 text-danger">
+                <div class="card shadow mb-4">
+                    {{ errors }}
+                </div>
+            </div>
             <div class="col-md-6">
                 <div class="card shadow mb-4">
                     <div class="card-body">
@@ -24,7 +29,13 @@
                         <h6 class="m-0 font-weight-bold text-primary">Media</h6>
                     </div>
                     <div class="card-body border">
-                        <vue-dropzone ref="myVueDropzone" id="dropzone" :options="dropzoneOptions"></vue-dropzone>
+                        <vue-dropzone
+                            ref="myVueDropzone"
+                            id="dropzone"
+                            :options="dropzoneOptions"
+                            @vdropzone-success="imageUploadSuccess"
+                            @vdropzone-removed-file="removedFile"
+                        />
                     </div>
                 </div>
             </div>
@@ -91,7 +102,8 @@
             </div>
         </div>
 
-        <button @click="saveProduct" type="submit" class="btn btn-lg btn-primary">Save</button>
+        <button v-if="editMode" @click="update" type="submit" class="btn btn-lg btn-primary">Update</button>
+        <button v-else @click="store" type="submit" class="btn btn-lg btn-primary">Save</button>
         <button type="button" class="btn btn-secondary btn-lg">Cancel</button>
     </section>
 </template>
@@ -110,15 +122,22 @@ export default {
         variants: {
             type: Array,
             required: true
+        },
+        product: {
+            type: Object,
+            required: false,
+            default: () => {
+            }
         }
     },
     data() {
         return {
-            form: {},
+            product_id: null,
             product_name: '',
             product_sku: '',
             description: '',
             images: [],
+            editMode: false,
             product_variant: [
                 {
                     option: this.variants[0].id,
@@ -127,23 +146,69 @@ export default {
             ],
             product_variant_prices: [],
             dropzoneOptions: {
-                url: 'https://httpbin.org/post',
+                url: '/upload-photo',
                 thumbnailWidth: 150,
-                maxFilesize: 0.5,
-                headers: {"My-Awesome-Header": "header value"}
-            }
+                maxFilesize: 4,
+                headers: {
+                    'X-CSRF-TOKEN': document.head.querySelector('meta[name="csrf-token"]').content
+                },
+                addRemoveLinks: true
+            },
+            errors: null
         }
     },
     methods: {
-        addVariantsToPreview() {
+        init() {
+            if (this.product && Object.keys(this.product).length) {
+                this.editMode = true
+                this.product_id = this.product?.id || null
+                this.product_name = this.product?.title || ''
+                this.product_sku = this.product?.sku || ''
+                this.description = this.product?.description || ''
+                this.images = [] = this.product.product_images.map(el => el.file_path)
 
+                let all_variants = this.variants.map(el => el.id)
+                let selected_variants = this.product_variant.map(el => el.option);
+                let available_variants = all_variants.filter(entry1 => !selected_variants.some(entry2 => entry1 == entry2))
+
+                const product_variants = this.product?.product_variants || []
+                let data = []
+                let v_ids = []
+
+                // Adding Product Variants
+                product_variants.forEach((obj) => {
+                    if (v_ids.includes(obj.variant_id)) {
+                        data.filter(y => {
+                            if (y.option === obj.variant_id) y.tags.push(obj.variant)
+                        })
+                    } else {
+                        data.push({option: obj.variant_id, tags: [obj.variant]})
+                        v_ids.push(obj.variant_id)
+                    }
+                })
+                this.product_variant = data
+
+                const product_variant_prices = this.product?.product_variant_prices || []
+                product_variant_prices.forEach(obj => {
+                    let title = product_variants.find(z => z.id === obj.product_variant_one)?.variant
+                    if (obj.product_variant_two) title += '/' + product_variants.find(z => z.id === obj.product_variant_one)?.variant
+                    if (obj.product_variant_three) title += '/' + product_variants.find(z => z.id === obj.product_variant_one)?.variant
+                    title += '/';
+                    this.product_variant_prices.push({title: title, price: obj.price, stock: obj.stock})
+                })
+            }
         },
-        // it will push a new object into product variant
+        imageUploadSuccess(file, response) {
+            this.images.push(response.file_path)
+        },
+        removedFile(file, error, xhr) {
+            const index = this.images.indexOf(file.name)
+            if (index > -1) this.images.splice(index, 1)
+        },
         newVariant() {
             let all_variants = this.variants.map(el => el.id)
             let selected_variants = this.product_variant.map(el => el.option);
             let available_variants = all_variants.filter(entry1 => !selected_variants.some(entry2 => entry1 == entry2))
-            // console.log(available_variants)
 
             this.product_variant.push({
                 option: available_variants[0],
@@ -167,8 +232,6 @@ export default {
                 })
             })
         },
-
-        // combination algorithm
         getCombn(arr, pre) {
             pre = pre || '';
             if (!arr.length) {
@@ -180,30 +243,57 @@ export default {
             }, []);
             return ans;
         },
-
-        // store product into database
-        saveProduct() {
-            let product = {
+        store() {
+            let payload = {
                 title: this.product_name,
                 sku: this.product_sku,
                 description: this.description,
-                product_image: this.images,
-                product_variant: this.product_variant,
+                product_images: this.images,
+                product_variants: this.product_variant,
                 product_variant_prices: this.product_variant_prices
             }
-            console.log(product)
 
-            axios.post('/product', product).then(response => {
+            axios.post('/product', payload).then(response => {
+                this.clearForm()
                 console.log(response.data);
             }).catch(error => {
-                console.log(error);
+                this.errors = error
             })
-        }
+        },
+        update() {
+            let payload = {
+                title: this.product_name,
+                sku: this.product_sku,
+                description: this.description,
+                product_images: this.images,
+                product_variants: this.product_variant,
+                product_variant_prices: this.product_variant_prices
+            }
 
-
+            axios.put('/product/' + this.product_id, payload).then(response => {
+                this.clearForm()
+                console.log(response.data);
+            }).catch(error => {
+                this.errors = error
+            })
+        },
+        clearForm() {
+            this.product_name = ''
+            this.product_sku = ''
+            this.description = ''
+            this.images = []
+            this.product_variant = [
+                {
+                    option: this.variants[0].id,
+                    tags: []
+                }
+            ]
+            this.product_variant_prices = []
+            this.errors = null
+        },
     },
     mounted() {
-        console.log('Component mounted.')
+        this.init()
     }
 }
 </script>
