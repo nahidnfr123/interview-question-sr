@@ -114,6 +114,7 @@ export default {
     },
     data() {
         return {
+            form: {},
             product_name: '',
             product_sku: '',
             description: '',
@@ -134,6 +135,9 @@ export default {
         }
     },
     methods: {
+        addVariantsToPreview() {
+
+        },
         // it will push a new object into product variant
         newVariant() {
             let all_variants = this.variants.map(el => el.id)
@@ -187,15 +191,13 @@ export default {
                 product_variant: this.product_variant,
                 product_variant_prices: this.product_variant_prices
             }
-
+            console.log(product)
 
             axios.post('/product', product).then(response => {
                 console.log(response.data);
             }).catch(error => {
                 console.log(error);
             })
-
-            console.log(product);
         }
 
 

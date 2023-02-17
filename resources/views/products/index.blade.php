@@ -8,14 +8,26 @@
 
 
     <div class="card">
-        <form action="" method="get" class="card-header">
+        <form action="{{ route('searchProduct') }}" method="get" class="card-header">
             <div class="form-row justify-content-between">
                 <div class="col-md-2">
-                    <input type="text" name="title" placeholder="Product Title" class="form-control">
+                    <input type="text" name="title" placeholder="Product Title" class="form-control"
+                           value="{{$_GET['title'] ?? ''}}">
                 </div>
                 <div class="col-md-2">
                     <select name="variant" id="" class="form-control">
-
+                        @foreach($variants as $key => $variant)
+                            {{--                            <optgroup label="{{$key}}">--}}
+                            {{--                                --}}{{--@foreach($variant->productVariants() as $pv)--}}
+                            {{--                                    <option value="">{{$pv->variant}}</option>--}}
+                            {{--                                @endforeach--}}
+                            {{--                                <option value="">{{$variant}}</option>--}}
+                            {{--                            </optgroup>--}}
+                            {{--                            <label for="">{{$variant->title}}</label>--}}
+                            {{-- @foreach($variant->productVariants as $pv)
+                                 <option value="">{{$pv->variant}}</option>
+                             @endforeach--}}
+                        @endforeach
                     </select>
                 </div>
 
@@ -24,12 +36,15 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text">Price Range</span>
                         </div>
-                        <input type="text" name="price_from" aria-label="First name" placeholder="From" class="form-control">
-                        <input type="text" name="price_to" aria-label="Last name" placeholder="To" class="form-control">
+                        <input type="text" name="price_from" aria-label="First name" placeholder="From" class="form-control"
+                               value="{{$_GET['price_from'] ?? ''}}">
+                        <input type="text" name="price_to" aria-label="Last name" placeholder="To" class="form-control"
+                               value="{{$_GET['price_to'] ?? ''}}">
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <input type="date" name="date" placeholder="Date" class="form-control">
+                    <input type="date" name="date" placeholder="Date" class="form-control"
+                           value="{{$_GET['date'] ?? ''}}">
                 </div>
                 <div class="col-md-1">
                     <button type="submit" class="btn btn-primary float-right"><i class="fa fa-search"></i></button>
@@ -44,42 +59,54 @@
                     <tr>
                         <th>#</th>
                         <th>Title</th>
-                        <th>Description</th>
+                        <th width="300px">Description</th>
                         <th>Variant</th>
                         <th width="150px">Action</th>
                     </tr>
                     </thead>
 
                     <tbody>
-
-                    <tr>
-                        <td>1</td>
-                        <td>T-Shirt <br> Created at : 25-Aug-2020</td>
-                        <td>Quality product in low cost</td>
-                        <td>
-                            <dl class="row mb-0" style="height: 80px; overflow: hidden" id="variant">
-
-                                <dt class="col-sm-3 pb-0">
-                                    SM/ Red/ V-Nick
-                                </dt>
-                                <dd class="col-sm-9">
-                                    <dl class="row mb-0">
-                                        <dt class="col-sm-4 pb-0">Price : {{ number_format(200,2) }}</dt>
-                                        <dd class="col-sm-8 pb-0">InStock : {{ number_format(50,2) }}</dd>
-                                    </dl>
-                                </dd>
-                            </dl>
-                            <button onclick="$('#variant').toggleClass('h-auto')" class="btn btn-sm btn-link">Show more</button>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{{ route('product.edit', 1) }}" class="btn btn-success">Edit</a>
-                            </div>
-                        </td>
-                    </tr>
-
+                    @foreach($products as $key => $product)
+                        <tr>
+                            <td>{{$product->id}}</td>
+                            <td>{{$product->title}} <br> Created at : {{ \Carbon\Carbon::parse($product->created_at)->format('d-M-yy') }}
+                            </td>
+                            <td><small>{{ $product->description }}</small></td>
+                            <td>
+                                <div style="height: 80px; overflow: hidden" id="variant-{{$product->id}}">
+                                    @foreach($product->productVariantPrices as $productVariantPrice)
+                                        <dl class="row mb-0 pa-0">
+                                            <dt class="col-sm-3 pb-0">
+                                                <small>
+                                                    <strong>{{$productVariantPrice['varientConbination']}}</strong>
+                                                </small>
+                                                {{--                                        SM/ Red/ V-Nick--}}
+                                            </dt>
+                                            <dd class="col-sm-9">
+                                                <dl class="row mb-0">
+                                                    <dt class="col-sm-6 pb-0">
+                                                        <small>
+                                                            <strong>Price : {{ number_format($productVariantPrice->price,2) }}</strong>
+                                                        </small>
+                                                    </dt>
+                                                    <dd class="col-sm-6 pb-0">
+                                                        <small>InStock : {{ number_format($productVariantPrice->stock,2) }}</small>
+                                                    </dd>
+                                                </dl>
+                                            </dd>
+                                        </dl>
+                                    @endforeach
+                                </div>
+                                <button onclick="$('#variant-{{$product->id}}').toggleClass('h-auto')" class="btn btn-sm btn-link">Show more</button>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ route('product.edit', 1) }}" class="btn btn-success">Edit</a>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
                     </tbody>
-
                 </table>
             </div>
 
@@ -88,10 +115,15 @@
         <div class="card-footer">
             <div class="row justify-content-between">
                 <div class="col-md-6">
-                    <p>Showing 1 to 10 out of 100</p>
+                    <p>
+                        Showing
+                        {{$products->firstItem() }} to
+                        {{$products->lastItem()}} out of
+                        {{$products->total()}}
+                    </p>
                 </div>
-                <div class="col-md-2">
-
+                <div class="col-md-4">
+                    {{$products->links()}}
                 </div>
             </div>
         </div>
