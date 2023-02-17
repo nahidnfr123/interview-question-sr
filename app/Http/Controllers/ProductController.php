@@ -38,7 +38,6 @@ class ProductController extends Controller
 
     public function search()
     {
-        // Get Variants with Product Variants
         $variants = $this->getVariants();
         $products = Product::query();
 
@@ -56,9 +55,14 @@ class ProductController extends Controller
                 $q->where('variant', $variant);
             });
         }
-        if ($price_from && $price_to) {
-            $products->whereHas('productVariantPrices', function ($q) use ($price_from, $price_to) {
-                $q->whereBetween('price', [(int)$price_from, (int)$price_to])->get();
+        if ($price_from) {
+            $products->whereHas('productVariantPrices', function ($q) use ($price_from) {
+                $q->where('price', '<=', $price_from);
+            });
+        }
+        if ($price_to) {
+            $products->whereHas('productVariantPrices', function ($q) use ($price_to) {
+                $q->where('price', '>=', $price_to);
             });
         }
         if ($date) {
