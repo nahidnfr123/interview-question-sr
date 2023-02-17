@@ -111,38 +111,36 @@ class ProductController extends Controller
             foreach ($request->product_variant as $variant) {
                 if ($variant['option'] && count($variant['tags'])) {
                     foreach ($variant['tags'] as $tags) {
-                        $productVariantsData[] = [
-                            'product_id' => $product->id,
-                            'variant' => $tags,
-                            'variant_id' => $variant['option'],
-                        ];
+                        $productVariantsData[] = ['product_id' => $product->id, 'variant' => $tags, 'variant_id' => $variant['option'],];
                     }
                 }
             }
             $productVariants = $product->productVariants()->createMany($productVariantsData);
-            dd($productVariants);
-        }
-        /// Left to do .... this code needs to be sent in observer ...
-        if (count($request->product_variant_prices) && count($product->productVariants())) {
-            $productVariantsPricesData = [];
-            foreach ($request->product_variant_prices as $variant_prices) {
-                $productVariantsPricesData[] = [
-                    'price' => $variant_prices['price'],
-                    'stock' => $variant_prices['stock'],
-                    'product_id' => $product->id,
-                    'title' => $variant_prices['title'],
-                    'product_variant_one' => $variant_prices['title'],
-                    'product_variant_two' => $variant_prices['title'],
-                    'product_variant_three' => $variant_prices['title'],
-                ];
+
+            if (count($request->product_variant_prices) && count($productVariants)) {
+                $productVariantsPricesData = [];
+                foreach ($request->product_variant_prices as $variant_prices) {
+                    $productVariantsPricesData[] = [
+                        'price' => $variant_prices['price'],
+                        'stock' => $variant_prices['stock'],
+                        'product_id' => $product->id,
+                        'product_variant_one' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[0]),
+                        'product_variant_two' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[1]),
+                        'product_variant_three' => $this->getVariantId($productVariants, explode('/', $variant_prices['title'])[2]),
+                    ];
+                }
+                ProductVariantPrice::insert($productVariantsPricesData);
             }
-            $productVariants->productVariantPrices()->insert($productVariantsPricesData);
         }
 
 
         return redirect()->back()->with('success', 'Product Saved');
     }
 
+    public function getVariantId($productVariants, $variant)
+    {
+        return $productVariants->where('variant', $variant)->first()->id ?? null;
+    }
 
     /**
      * Display the specified resource.
