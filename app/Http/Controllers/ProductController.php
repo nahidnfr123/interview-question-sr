@@ -13,6 +13,7 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -21,33 +22,16 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return Application|Factory|\Illuminate\Http\Response|View
+     * @return Application|Factory|View
      */
     public function index()
     {
-//        $productVariants = ProductVariant::select('variant')->distinct('variant')->get();
-//        return response()->json($productVariants);
-
+        // Get Variants with Product Variants
         $variants = Variant::with(['productVariants' => function ($query) {
-            return $query->select('variant')->groupBy('variant');
-        }])->orderBy('title')
-            ->distinct()
-            ->get()
-            ->groupBy('title');
+            $query->select('variant_id', 'variant')->distinct('variant')->get();
+        }])->get();
 
-        /*$variants = Variant::with(['productVariants' => function ($query) {
-//            $query->select(['variant'])->groupBy('variant');
-        }])->get()->groupBy('title');*/
-
-        /* $variants = DB::table('variants')
-             ->join('product_variants', 'variants.id', '=', 'product_variants.variant_id')
-             ->select('title', 'product_variants.variant')
-             ->groupBy('product_variants.variant')
-             ->groupBy('title')
-             ->get();*/
-//        return response()->json($variants);
-//        dd($variants);
-
+        // Get Products Paginated by 2 products per page
         $products = Product::paginate(2);
         return view('products.index', compact('products', 'variants'));
     }
@@ -87,7 +71,7 @@ class ProductController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return Application|Factory|\Illuminate\Http\Response|View
+     * @return Application|Factory|View
      */
     public function create()
     {
@@ -152,8 +136,8 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param \App\Models\Product $product
-     * @return \Illuminate\Http\Response
+     * @param Product $product
+     * @return void
      */
     public function show($product)
     {
@@ -163,8 +147,8 @@ class ProductController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param \App\Models\Product $product
-     * @return Application|Factory|\Illuminate\Http\Response|View
+     * @param Product $product
+     * @return Application|Factory|View
      */
     public function edit(Product $product)
     {
@@ -176,19 +160,25 @@ class ProductController extends Controller
      * Update the specified resource in storage.
      *
      * @param Request $request
-     * @param \App\Models\Product $product
-     * @return \Illuminate\Http\Response
+     * @param Product $product
+     * @return JsonResponse
      */
     public function update(Request $request, Product $product)
     {
-        //
+        DB::beginTransaction();
+        try {
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['message' => 'Some Error occurred!'], 501);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param \App\Models\Product $product
-     * @return \Illuminate\Http\Response
+     * @param Product $product
+     * @return Response
      */
     public function destroy(Product $product)
     {

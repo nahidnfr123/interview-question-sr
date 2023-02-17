@@ -1,5 +1,4 @@
 @extends('layouts.app')
-
 @section('content')
 
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -11,22 +10,19 @@
         <form action="{{ route('searchProduct') }}" method="get" class="card-header">
             <div class="form-row justify-content-between">
                 <div class="col-md-2">
-                    <input type="text" name="title" placeholder="Product Title" class="form-control"
-                           value="{{$_GET['title'] ?? ''}}">
+                    <input type="text" name="title" placeholder="Product Title" class="form-control">
+                    {{--                           value="{{$_GET['title'] ?? ''}}">--}}
                 </div>
                 <div class="col-md-2">
                     <select name="variant" id="" class="form-control">
                         @foreach($variants as $key => $variant)
-                            {{--                            <optgroup label="{{$key}}">--}}
-                            {{--                                --}}{{--@foreach($variant->productVariants() as $pv)--}}
-                            {{--                                    <option value="">{{$pv->variant}}</option>--}}
-                            {{--                                @endforeach--}}
-                            {{--                                <option value="">{{$variant}}</option>--}}
-                            {{--                            </optgroup>--}}
-                            {{--                            <label for="">{{$variant->title}}</label>--}}
-                            {{-- @foreach($variant->productVariants as $pv)
-                                 <option value="">{{$pv->variant}}</option>
-                             @endforeach--}}
+                            <optgroup label="{{$variant->title}}">
+                                @if(count($variant->productVariants))
+                                    @foreach($variant->productVariants as $pv)
+                                        <option value="{{$pv->variant}}">{{$pv->variant}}</option>
+                                    @endforeach
+                                @endif
+                            </optgroup>
                         @endforeach
                     </select>
                 </div>
