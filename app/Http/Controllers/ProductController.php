@@ -253,6 +253,8 @@ class ProductController extends Controller
                 }
             }
 
+            DB::commit();
+            return response()->json(['message' => 'Product Saved'], 200);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['message' => $e], 400);

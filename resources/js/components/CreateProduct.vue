@@ -105,6 +105,12 @@
         <button v-if="editMode" @click="update" type="submit" class="btn btn-lg btn-primary">Update</button>
         <button v-else @click="store" type="submit" class="btn btn-lg btn-primary">Save</button>
         <button type="button" class="btn btn-secondary btn-lg">Cancel</button>
+
+        <div v-if="success" class="mt-4">
+            <div class="alert alert-success">
+                Product {{ editMode ? 'Updated' : 'Created' }} Successfully!
+            </div>
+        </div>
     </section>
 </template>
 
@@ -138,6 +144,7 @@ export default {
             description: '',
             images: [],
             editMode: false,
+            success: false,
             product_variant: [
                 {
                     option: this.variants[0].id,
@@ -167,15 +174,11 @@ export default {
                 this.description = this.product?.description || ''
                 this.images = [] = this.product.product_images.map(el => el.file_path)
 
-                let all_variants = this.variants.map(el => el.id)
-                let selected_variants = this.product_variant.map(el => el.option);
-                let available_variants = all_variants.filter(entry1 => !selected_variants.some(entry2 => entry1 == entry2))
-
                 const product_variants = this.product?.product_variants || []
                 let data = []
                 let v_ids = []
 
-                // Adding Product Variants
+
                 product_variants.forEach((obj) => {
                     if (v_ids.includes(obj.variant_id)) {
                         data.filter(y => {
@@ -255,7 +258,7 @@ export default {
 
             axios.post('/product', payload).then(response => {
                 this.clearForm()
-                console.log(response.data);
+                if (response.status == 200) this.success = true
             }).catch(error => {
                 this.errors = error
             })
@@ -271,8 +274,8 @@ export default {
             }
 
             axios.put('/product/' + this.product_id, payload).then(response => {
-                this.clearForm()
-                console.log(response.data);
+                // this.clearForm()
+                if (response.status == 200) this.success = true
             }).catch(error => {
                 this.errors = error
             })

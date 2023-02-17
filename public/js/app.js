@@ -2036,6 +2036,12 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 //
 //
 //
+//
+//
+//
+//
+//
+//
 
 
 
@@ -2063,6 +2069,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       description: '',
       images: [],
       editMode: false,
+      success: false,
       product_variant: [{
         option: this.variants[0].id,
         tags: []
@@ -2095,21 +2102,9 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
         this.images = (_this$product$product = this.product.product_images.map(function (el) {
           return el.file_path;
         }), _this$product$product2 = _toArray(_this$product$product), _this$product$product);
-        var all_variants = this.variants.map(function (el) {
-          return el.id;
-        });
-        var selected_variants = this.product_variant.map(function (el) {
-          return el.option;
-        });
-        var available_variants = all_variants.filter(function (entry1) {
-          return !selected_variants.some(function (entry2) {
-            return entry1 == entry2;
-          });
-        });
         var product_variants = ((_this$product5 = this.product) === null || _this$product5 === void 0 ? void 0 : _this$product5.product_variants) || [];
         var data = [];
-        var v_ids = []; // Adding Product Variants
-
+        var v_ids = [];
         product_variants.forEach(function (obj) {
           if (v_ids.includes(obj.variant_id)) {
             data.filter(function (y) {
@@ -2215,7 +2210,7 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
       axios.post('/product', payload).then(function (response) {
         _this3.clearForm();
 
-        console.log(response.data);
+        if (response.status == 200) _this3.success = true;
       })["catch"](function (error) {
         _this3.errors = error;
       });
@@ -2232,9 +2227,8 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
         product_variant_prices: this.product_variant_prices
       };
       axios.put('/product/' + this.product_id, payload).then(function (response) {
-        _this4.clearForm();
-
-        console.log(response.data);
+        // this.clearForm()
+        if (response.status == 200) _this4.success = true;
       })["catch"](function (error) {
         _this4.errors = error;
       });
@@ -50948,7 +50942,19 @@ var render = function() {
       "button",
       { staticClass: "btn btn-secondary btn-lg", attrs: { type: "button" } },
       [_vm._v("Cancel")]
-    )
+    ),
+    _vm._v(" "),
+    _vm.success
+      ? _c("div", { staticClass: "mt-4" }, [
+          _c("div", { staticClass: "alert alert-success" }, [
+            _vm._v(
+              "\n            Product " +
+                _vm._s(_vm.editMode ? "Updated" : "Created") +
+                " Successfully!\n        "
+            )
+          ])
+        ])
+      : _vm._e()
   ])
 }
 var staticRenderFns = [
